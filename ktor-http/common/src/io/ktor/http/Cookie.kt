@@ -6,8 +6,7 @@ package io.ktor.http
 
 import io.ktor.util.*
 import io.ktor.util.date.*
-import kotlin.js.*
-import kotlin.math.*
+import kotlin.jvm.*
 
 /**
  * Represents a cookie with name, content and a set of settings such as expiration, visibility and security.
@@ -28,7 +27,8 @@ data class Cookie(
     val name: String,
     val value: String,
     val encoding: CookieEncoding = CookieEncoding.URI_ENCODING,
-    val maxAge: Long = 0,
+    @get:JvmName("getMaxAgeInt")
+    val maxAge: Int = 0,
     val expires: GMTDate? = null,
     val domain: String? = null,
     val path: String? = null,
@@ -36,49 +36,9 @@ data class Cookie(
     val httpOnly: Boolean = false,
     val extensions: Map<String, String?> = emptyMap()
 ) {
-    @Deprecated("Convert maxAge to Long")
-    constructor(
-        name: String,
-        value: String,
-        encoding: CookieEncoding = CookieEncoding.URI_ENCODING,
-        maxAge: Int,
-        expires: GMTDate? = null,
-        domain: String? = null,
-        path: String? = null,
-        secure: Boolean = false,
-        httpOnly: Boolean = false,
-        extensions: Map<String, String?> = emptyMap()
-    ) : this(name, value, encoding, maxAge.toLong(), expires, domain, path, secure, httpOnly, extensions)
-
-    init {
-        require(maxAge >= 0L) { "maxAge shouldn't be negative: $maxAge" }
-    }
-
-    @Suppress("unused")
+    @Suppress("unused", "KDocMissingDocumentation")
     @Deprecated("Binary compatibility.", level = DeprecationLevel.HIDDEN)
-    @JsName("getMaxAgeOld")
-    fun getMaxAge(): Int = maxAge.toInt()
-
-    @Deprecated("Convert maxAge to Long")
-    fun copy(
-        name: String,
-        value: String,
-        encoding: CookieEncoding = CookieEncoding.URI_ENCODING,
-        maxAge: Int,
-        expires: GMTDate? = null,
-        domain: String? = null,
-        path: String? = null,
-        secure: Boolean = false,
-        httpOnly: Boolean = false,
-        extensions: Map<String, String?> = emptyMap()
-    ): Cookie {
-        return Cookie(name, value, encoding, maxAge.toLong(), expires, domain, path, secure, httpOnly, extensions)
-    }
-
-    @Suppress("CONFLICTING_OVERLOADS", "unused")
-    @Deprecated("Binary compatibility.", level = DeprecationLevel.HIDDEN)
-    @JsName("component4old")
-    fun component4(): Int = maxAge.toInt()
+    fun getMaxAge(): Int = maxAge
 }
 
 /**
@@ -121,7 +81,7 @@ fun parseServerSetCookieHeader(cookiesHeader: String): Cookie {
         name = first.key,
         value = decodeCookieValue(first.value, encoding),
         encoding = encoding,
-        maxAge = loweredMap["max-age"]?.toLong() ?: 0L,
+        maxAge = loweredMap["max-age"]?.toInt() ?: 0,
         expires = loweredMap["expires"]?.fromHttpToGmtDate(),
         domain = loweredMap["domain"],
         path = loweredMap["path"],
@@ -189,7 +149,6 @@ fun renderCookieHeader(cookie: Cookie): String = with(cookie) {
     )
 }
 
-
 /**
  * Format `Set-Cookie` header value
  */
@@ -197,51 +156,25 @@ fun renderCookieHeader(cookie: Cookie): String = with(cookie) {
 fun renderSetCookieHeader(
     name: String, value: String,
     encoding: CookieEncoding = CookieEncoding.URI_ENCODING,
-    maxAge: Int, expires: GMTDate? = null, domain: String? = null,
-    path: String? = null,
-    secure: Boolean = false, httpOnly: Boolean = false,
-    extensions: Map<String, String?> = emptyMap(),
-    includeEncoding: Boolean = true
-): String = renderSetCookieHeader(
-    name,
-    value,
-    encoding,
-    maxAge.toLong(),
-    expires,
-    domain,
-    path,
-    secure,
-    httpOnly,
-    extensions,
-    includeEncoding
-)
-
-/**
- * Format `Set-Cookie` header value
- */
-@KtorExperimentalAPI
-fun renderSetCookieHeader(
-    name: String, value: String,
-    encoding: CookieEncoding = CookieEncoding.URI_ENCODING,
-    maxAge: Long = 0, expires: GMTDate? = null, domain: String? = null,
+    maxAge: Int = 0, expires: GMTDate? = null, domain: String? = null,
     path: String? = null,
     secure: Boolean = false, httpOnly: Boolean = false,
     extensions: Map<String, String?> = emptyMap(),
     includeEncoding: Boolean = true
 ): String = (
-    listOf(
-        cookiePart(name.assertCookieName(), value, encoding),
-        cookiePartUnencoded("Max-Age", if (maxAge > 0) maxAge else null),
-        cookiePartUnencoded("Expires", expires?.toHttpDate()),
-        cookiePart("Domain", domain, CookieEncoding.RAW),
-        cookiePart("Path", path, CookieEncoding.RAW),
+        listOf(
+            cookiePart(name.assertCookieName(), value, encoding),
+            cookiePartUnencoded("Max-Age", if (maxAge > 0) maxAge else null),
+            cookiePartUnencoded("Expires", expires?.toHttpDate()),
+            cookiePart("Domain", domain, CookieEncoding.RAW),
+            cookiePart("Path", path, CookieEncoding.RAW),
 
-        cookiePartFlag("Secure", secure),
-        cookiePartFlag("HttpOnly", httpOnly)
-    )
-        + extensions.map { cookiePartExt(it.key.assertCookieName(), it.value, encoding) }
-        + if (includeEncoding) cookiePartExt("\$x-enc", encoding.name, CookieEncoding.RAW) else ""
-    ).filter { it.isNotEmpty() }
+            cookiePartFlag("Secure", secure),
+            cookiePartFlag("HttpOnly", httpOnly)
+        )
+                + extensions.map { cookiePartExt(it.key.assertCookieName(), it.value, encoding) }
+                + if (includeEncoding) cookiePartExt("\$x-enc", encoding.name, CookieEncoding.RAW) else ""
+        ).filter { it.isNotEmpty() }
     .joinToString("; ")
 
 /**

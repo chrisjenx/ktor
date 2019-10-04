@@ -71,7 +71,7 @@ class ResponseCookies(
                 name,
                 value,
                 encoding,
-                maxAge,
+                maxAge.coerceAtMost(Int.MAX_VALUE.toLong()).toInt(),
                 expires,
                 domain,
                 path,

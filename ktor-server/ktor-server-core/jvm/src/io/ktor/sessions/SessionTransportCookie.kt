@@ -40,7 +40,7 @@ class SessionTransportCookie(
             name,
             transformers.transformWrite(value),
             configuration.encoding,
-            maxAge,
+            maxAge.coerceAtMost(Int.MAX_VALUE.toLong()).toInt(),
             expires,
             configuration.domain,
             configuration.path,

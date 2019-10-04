@@ -471,7 +471,7 @@ class SessionTest {
                 assertNotNull(sessionCookie, "No session cookie found")
                 val after = GMTDate()
 
-                assertEquals(durationSeconds, sessionCookie.maxAge)
+                assertEquals(durationSeconds, sessionCookie.maxAge.toLong())
                 assertEquals("777", sessionCookie.value)
                 assertNotNull(sessionCookie.expires, "Expires cookie value is not set")
                 assertTrue("Expires cookie parameter value should be in the specified dates range") {
@@ -686,7 +686,7 @@ class SessionTest {
 
         val cookies = call.response.cookies["test"]
         assertNotNull(cookies)
-        assertEquals(3153600000L, cookies.maxAge)
+        assertEquals(Int.MAX_VALUE, cookies.maxAge)
     }
 
     @Test
@@ -700,7 +700,7 @@ class SessionTest {
 
         val cookies = call.response.cookies["test"]
         assertNotNull(cookies)
-        assertEquals(Long.MAX_VALUE, cookies.maxAge)
+        assertEquals(Int.MAX_VALUE, cookies.maxAge)
     }
 
     @Test
