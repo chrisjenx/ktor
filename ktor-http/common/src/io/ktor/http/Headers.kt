@@ -32,6 +32,21 @@ class HeadersBuilder(size: Int = 8) : StringValuesBuilder(true, size) {
         built = true
         return HeadersImpl(values)
     }
+
+    override fun validateName(name: String) {
+        super.validateName(name)
+        require(name.none { isDelimiter(it) }) { "Header name '$name' is not valid." }
+    }
+
+    override fun validateValue(value: String) {
+        super.validateValue(value)
+        require(value.all { it >= ' ' || it == '\u0009' }) { "Header value '$value' is not valid." }
+    }
+
+    private fun isDelimiter(ch: Char): Boolean {
+        return ch <= ' ' || ch in "\"(),/:;<=>?@[\\]{}"
+    }
+
 }
 
 @Suppress("KDocMissingDocumentation")
