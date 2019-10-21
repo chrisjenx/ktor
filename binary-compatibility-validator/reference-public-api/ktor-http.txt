@@ -1088,12 +1088,6 @@ public final class io/ktor/http/content/EntityTagVersion : io/ktor/http/content/
 	public fun toString ()Ljava/lang/String;
 }
 
-public final class io/ktor/http/content/EntityTagVersion$Companion {
-	public final fun getSTAR ()Lio/ktor/http/content/EntityTagVersion;
-	public final fun parse (Ljava/lang/String;)Ljava/util/List;
-	public final fun parseSingle (Ljava/lang/String;)Lio/ktor/http/content/EntityTagVersion;
-}
-
 public final class io/ktor/http/content/LastModifiedVersion : io/ktor/http/content/Version {
 	public fun <init> (Lio/ktor/util/date/GMTDate;)V
 	public fun <init> (Ljava/util/Date;)V
