@@ -239,9 +239,11 @@ open class StringValuesBuilder(val caseInsensitiveName: Boolean = false, size: I
         return StringValuesImpl(caseInsensitiveName, values)
     }
 
+    @KtorExperimentalAPI
     protected open fun validateName(name: String) {
     }
 
+    @KtorExperimentalAPI
     protected open fun validateValue(value: String) {
     }
 

@@ -4,6 +4,8 @@
 
 package io.ktor.http
 
+import io.ktor.util.*
+
 @Suppress("unused", "KDocMissingDocumentation", "PublicApiImplicitType", "MayBeConstant")
 object HttpHeaders {
     // Permanently registered standard HTTP headers
@@ -114,17 +116,55 @@ object HttpHeaders {
     val XTotalCount = "X-Total-Count"
 
     /**
-     * Check if [header] is unsafe. Header is unsafe if listed in [UnsafeHeaders]
+     * Check if [header] is unsafe. Header is unsafe if listed in [UnsafeHeadersList]
      */
-    fun isUnsafe(header: String): Boolean = UnsafeHeaders.any { it.equals(header, ignoreCase = true) }
+    fun isUnsafe(header: String): Boolean = UnsafeHeadersArray.any { it.equals(header, ignoreCase = true) }
 
-    val UnsafeHeaders: Array<String> = arrayOf(ContentLength, ContentType, TransferEncoding, Upgrade)
+    private val UnsafeHeadersArray: Array<String> = arrayOf(ContentLength, ContentType, TransferEncoding, Upgrade)
+
+    @Deprecated("Use UnsafeHeadersList instead.", replaceWith = ReplaceWith("HttpHeaders.UnsafeHeadersList"))
+    val UnsafeHeaders: Array<String> get() = UnsafeHeadersArray.copyOf()
+
+    val UnsafeHeadersList: List<String> = UnsafeHeadersArray.asList()
+
+    @KtorExperimentalAPI
+    fun checkHeaderName(name: String) {
+        name.forEachIndexed { index, ch ->
+            if (ch <= ' ' || isDelimiter(ch)) {
+                throw IllegalHeaderNameException(name, index)
+            }
+        }
+    }
+
+    @KtorExperimentalAPI
+    fun checkHeaderValue(value: String) {
+        value.forEachIndexed { index, ch ->
+            if (ch == ' ' || ch == '\u0009') return@forEachIndexed
+            if (ch < ' ') {
+                throw IllegalHeaderValueException(value, index)
+            }
+        }
+    }
 }
 
 /**
- * Thrown when an attempt to set unsafe header detected. A header is unsafe if listed in [HttpHeaders.UnsafeHeaders].
+ * Thrown when an attempt to set unsafe header detected. A header is unsafe if listed in [HttpHeaders.UnsafeHeadersList].
  */
 class UnsafeHeaderException(header: String) : IllegalArgumentException(
     "Header $header is controlled by the engine and " +
         "cannot be set explicitly"
 )
+
+@KtorExperimentalAPI
+class IllegalHeaderNameException(val headerName: String, val position: Int) : IllegalArgumentException(
+    "Header name '$headerName' contains illegal character '${headerName[position]}'" +
+        " (code ${(headerName[position].toInt() and 0xff)})"
+)
+
+@KtorExperimentalAPI
+class IllegalHeaderValueException(val headerValue: String, val position: Int) : IllegalArgumentException(
+    "Header value '$headerValue' contains illegal character '${headerValue[position]}'" +
+        " (code ${(headerValue[position].toInt() and 0xff)})"
+)
+
+private fun isDelimiter(ch: Char): Boolean = ch in "\"(),/:;<=>?@[\\]{}"
